@@ -62,7 +62,7 @@ public:
 
 private:
   std::shared_ptr<Node> root;
-  std::shared_ptr<Node> final;
+  std::shared_ptr<Node> curr;
   std::vector<std::shared_ptr<Node>> frontier;
   void searchAction();
   state result(const state&, int);
@@ -89,31 +89,33 @@ bool isSovable(const Board& board)
 //public
 void Board::search()
 {
-  if (!final)
+  if (!curr)
   {
     if (isSovable(*this))
     {
       frontier.push_back(root);
       searchAction();
+      while(!goalTest(curr->s))
+        searchAction();
     }
     else
-      final = std::make_shared<Node>();
+      curr = std::make_shared<Node>();
   }
 }
 void Board::print(std::ostream &os)
 {
-  if (!final)
+  if (!curr)
   {
     os << "not yet research." << std::endl;
     return;
   }
-  if(final->s.empty())
+  if(curr->s.empty())
   {
     os << "this board is unsolvable." << std::endl;
     return;
   }
-  auto n(final);
-  std::vector<std::shared_ptr<Node>> seq{final};
+  auto n(curr);
+  std::vector<std::shared_ptr<Node>> seq{curr};
   while(n->prev)
   {
     seq.push_back(n->prev);
@@ -132,7 +134,7 @@ void Board::searchAction()
   std::pop_heap(frontier.begin(), frontier.end());
   auto n(frontier.back());
   frontier.pop_back();
-  final = n;
+  curr = n;
   if (!goalTest(n->s))
   {
     for (auto a : actions(n->s))
@@ -142,7 +144,6 @@ void Board::searchAction()
       std::push_heap(frontier.begin(), frontier.end(),
                       [](auto a, auto b) { return a->f() > b->f(); });
     }
-    searchAction();
   }
 }
 std::vector<Board::action> Board::actions(const state &s)
