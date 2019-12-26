@@ -64,7 +64,7 @@ private:
   std::shared_ptr<Node> root;
   std::shared_ptr<Node> curr;
   std::vector<std::shared_ptr<Node>> frontier;
-  void searchAction();
+  void expandCurr();
   state result(const state&, int);
   std::vector<action> actions(const state&);
   bool goalTest(const state&);
@@ -93,10 +93,14 @@ void Board::search()
   {
     if (isSovable(*this))
     {
-      frontier.push_back(root);
-      searchAction();
+      curr = root;
       while(!goalTest(curr->s))
-        searchAction();
+      {
+        expandCurr();
+        std::pop_heap(frontier.begin(), frontier.end());
+        curr = frontier.back();
+        frontier.pop_back();
+      }
     }
     else
       curr = std::make_shared<Node>();
@@ -129,21 +133,14 @@ void Board::print(std::ostream &os)
 }
 
 //private
-void Board::searchAction()
+void Board::expandCurr()
 {
-  std::pop_heap(frontier.begin(), frontier.end());
-  auto n(frontier.back());
-  frontier.pop_back();
-  curr = n;
-  if (!goalTest(n->s))
+  for (auto a : actions(curr->s))
   {
-    for (auto a : actions(n->s))
-    {
-      state newS = result(n->s, a);
-      frontier.push_back(std::make_shared<Node>(newS, n->g+1, heuristic(newS), n));
-      std::push_heap(frontier.begin(), frontier.end(),
-                      [](auto a, auto b) { return a->f() > b->f(); });
-    }
+    state newS = result(curr->s, a);
+    frontier.push_back(std::make_shared<Node>(newS, curr->g + 1, heuristic(newS), curr));
+    std::push_heap(frontier.begin(), frontier.end(),
+                   [](auto a, auto b) { return a->f() > b->f(); });
   }
 }
 std::vector<Board::action> Board::actions(const state &s)

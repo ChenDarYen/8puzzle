@@ -31,9 +31,17 @@ int main(int argc, char *argv[])
     }
   }
 
-  Board board(init_state);
-  board.search();
-  board.print(output);
+  try
+  {
+    Board board(init_state);
+    board.search();
+    board.print(output);
+  }
+  catch(const std::bad_alloc &e)
+  {
+    cerr << e.what() << endl;
+  }
+  
 
   return 0;
 }
